@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { supabase } from '../lib/supabase';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// In production on Vercel, the API and frontend are on the same domain, so we use relative path
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = axios.create({
   baseURL: API_URL,

@@ -34,3 +34,10 @@ lerna-debug.log*
 
 # Coverage
 coverage/
+
+# Python / Backend
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
