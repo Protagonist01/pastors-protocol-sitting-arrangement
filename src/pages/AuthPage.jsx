@@ -77,6 +77,12 @@ export function AuthPage() {
           </FormField>
 
           {err && <p className="auth-error" style={{ color: err.includes('successful') ? '#22c55e' : '#ef4444' }}>{err}</p>}
+          
+          {!isSupabaseConfigured && (
+            <p className="auth-error" style={{ color: '#f59e0b', background: '#f59e0b11', padding: '10px', borderRadius: '6px', border: '1px solid #f59e0b33' }}>
+              Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+            </p>
+          )}
 
           <button className="btn btn-gold" style={{ width:'100%', marginTop:4, padding:'11px' }}
             onClick={submit} disabled={loading || !isSupabaseConfigured}>
