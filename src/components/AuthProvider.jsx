@@ -33,8 +33,16 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (!error && data) {
       setProfile(data);
+    } else {
+      setProfile(null);
     }
     setLoading(false);
+  };
+
+  const reloadProfile = async () => {
+    if (user?.id) {
+      await fetchProfile(user.id);
+    }
   };
 
   const val = {
@@ -42,6 +50,7 @@ export function AuthProvider({ children }) {
     user,
     profile,
     loading,
+    reloadProfile,
     role: profile?.role || 'protocol',
     isEditorOrAdmin: profile?.role === 'admin' || profile?.role === 'editor'
   };

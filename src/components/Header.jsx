@@ -6,13 +6,17 @@ import { LogOut, Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export function Header({ confName, sessionName }) {
-  const { user, profile } = useAuth();
+  const { user, profile, reloadProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const handleRefreshProfile = async () => {
+    await reloadProfile();
   };
 
   const isDashboard = location.pathname === '/';
@@ -59,6 +63,9 @@ export function Header({ confName, sessionName }) {
             style={{ background: `${roleColor}22`, border: `2px solid ${roleColor}55` }}>
             {(profile?.name || user?.email)?.[0]?.toUpperCase()}
           </div>
+          <button className="btn btn-ghost btn-sm" onClick={handleRefreshProfile} title="Refresh profile" style={{ fontSize: 16 }}>
+            ↻
+          </button>
           <button className="btn btn-ghost btn-sm" onClick={handleLogout} title="Sign out" style={{ fontSize: 16 }}>
             <LogOut size={16} />
           </button>
@@ -97,6 +104,12 @@ export function Header({ confName, sessionName }) {
           onClick={() => { navigate('/'); setDrawerOpen(false); }}>
           📋 Conferences
         </button>
+        {profile?.role === 'admin' && (
+          <button className="btn btn-ghost" style={{ width:'100%', justifyContent:'flex-start', padding:'10px 8px', color: location.pathname === '/users' ? '#c9a84c' : '#8cb398' }}
+            onClick={() => { navigate('/users'); setDrawerOpen(false); }}>
+            👥 Users
+          </button>
+        )}
         {confName && (
           <button className="btn btn-ghost" style={{ width:'100%', justifyContent:'flex-start', padding:'10px 8px', color: !sessionName ? '#c9a84c' : '#8cb398' }}
             onClick={() => setDrawerOpen(false)}>

@@ -8,6 +8,7 @@ import { AuthPage } from './pages/AuthPage';
 import { Dashboard } from './pages/Dashboard';
 import { Conference } from './pages/Conference';
 import { Session } from './pages/Session';
+import { UserManagement } from './pages/UserManagement';
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/conference/:confId" element={<ProtectedRoute><Conference /></ProtectedRoute>} />
             <Route path="/session/:sessionId" element={<ProtectedRoute><Session /></ProtectedRoute>} />
+            <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
