@@ -1,56 +1,71 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import Optional, Literal
 from datetime import date, time
 
-# Conferences
-class ConferenceBase(BaseModel):
+
+# ── User / Profile schemas ──
+
+class RoleUpdate(BaseModel):
+    role: Literal["admin", "editor", "protocol"]
+
+
+# ── Conferences ──
+
+class ConferenceCreate(BaseModel):
     name: str
     date: Optional[date] = None
     venue: Optional[str] = None
     description: Optional[str] = None
 
-class ConferenceCreate(ConferenceBase):
-    pass
-
-class ConferenceUpdate(ConferenceBase):
+class ConferenceUpdate(BaseModel):
     name: Optional[str] = None
+    date: Optional[date] = None
+    venue: Optional[str] = None
+    description: Optional[str] = None
 
-# Sessions
-class SessionBase(BaseModel):
+
+# ── Sessions ──
+
+class SessionCreate(BaseModel):
     name: str
     date: Optional[date] = None
     time: Optional[time] = None
     description: Optional[str] = None
+    seating_config: Optional[dict] = {}
+    # conference_id comes from the URL path, not the body
 
-class SessionCreate(SessionBase):
-    conference_id: str
-
-class SessionUpdate(SessionBase):
+class SessionUpdate(BaseModel):
     name: Optional[str] = None
+    date: Optional[date] = None
+    time: Optional[time] = None
+    description: Optional[str] = None
+    seating_config: Optional[dict] = None
 
-# Attendees
-class AttendeeBase(BaseModel):
+
+# ── Dignitaries ──
+
+class DignitaryCreate(BaseModel):
     name: str
+    title: str                          # free text, mandatory (per AGENT_CONTEXT.md §6.5)
+    church: Optional[str] = None
+    extension: Optional[str] = None     # branch / district / area
+    section: Optional[str] = None
+    row_num: Optional[int] = None
+    col_num: Optional[int] = None
+    notes: Optional[str] = None
+    # session_id comes from the URL path, not the body
+
+class DignitaryUpdate(BaseModel):
+    name: Optional[str] = None
     title: Optional[str] = None
     church: Optional[str] = None
     extension: Optional[str] = None
-    section_id: Optional[str] = None
+    section: Optional[str] = None
     row_num: Optional[int] = None
     col_num: Optional[int] = None
-    status: Optional[str] = "pending"
+    status: Optional[str] = None
     notes: Optional[str] = None
+    picture_url: Optional[str] = None
 
-class AttendeeCreate(AttendeeBase):
-    session_id: str
-
-class AttendeeUpdateStatus(BaseModel):
-    status: str
-
-# Seating configs
-class SeatingConfigBase(BaseModel):
-    section_id: str
-    rows: int
-    cols: int
-
-class SeatingConfigCreate(SeatingConfigBase):
-    session_id: str
+class DignitaryStatusUpdate(BaseModel):
+    status: Literal["pending", "arrived", "seated", "absent"]

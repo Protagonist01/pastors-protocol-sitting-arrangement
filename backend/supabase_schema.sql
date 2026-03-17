@@ -1,139 +1,234 @@
--- Pastors' Protocol: Supabase Database Schema
+-- =============================================================================
+-- Pastors' Protocol Central Sitting Arrangement
+-- Complete Database Schema — Source of Truth
+-- Generated from AGENT_CONTEXT.md (Sections 4, 5, 6, 13)
+-- =============================================================================
+-- INSTRUCTIONS:
+--   Run this ENTIRE file in the Supabase SQL Editor (Dashboard → SQL Editor).
+--   It will create all tables, enable RLS, set up policies, create the
+--   auto-profile trigger, and enable realtime.
+--
+--   If re-running on an existing project, you may need to DROP existing
+--   tables/policies first (see bottom of file for cleanup SQL).
+-- =============================================================================
 
--- 1. Create a custom ENUM for roles
-CREATE TYPE user_role AS ENUM ('admin', 'editor', 'protocol');
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Create the Profiles table (tied 1-to-1 with auth.users)
-CREATE TABLE public.profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  name TEXT NOT NULL,
-  role user_role DEFAULT 'protocol'::user_role NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- =============================================================================
+-- 1. PROFILES TABLE
+-- =============================================================================
+-- Automatically populated by the on_auth_user_created trigger (see §13).
+-- Role is always 'protocol' on signup. Admins promote via Access Control UI.
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name   TEXT NOT NULL,
+    role        TEXT NOT NULL DEFAULT 'protocol'
+                  CHECK (role IN ('admin', 'editor', 'protocol')),
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS) on profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Protocol members can view all profiles
-CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
--- Only Admins can update roles (or profiles themselves can update their own name)
-CREATE POLICY "Users can edit their own profile OR admins can edit all" ON public.profiles FOR UPDATE USING (
-  auth.uid() = id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+-- RLS: anyone can read all profiles
+CREATE POLICY "profiles_read_all"
+    ON public.profiles FOR SELECT
+    USING (true);
+
+-- RLS: users can update their own profile (but not the role field — that's admin-only via API)
+CREATE POLICY "profiles_update_own"
+    ON public.profiles FOR UPDATE
+    USING (auth.uid() = id)
+    WITH CHECK (auth.uid() = id);
+
+-- =============================================================================
+-- 2. CONFERENCES TABLE
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.conferences (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        TEXT NOT NULL,
+    date        DATE,
+    venue       TEXT,
+    description TEXT,
+    created_by  UUID REFERENCES public.profiles(id),
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Trigger to automatically create a profile record when a user signs up
-CREATE OR REPLACE FUNCTION public.handle_new_user() 
+ALTER TABLE public.conferences ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 3. SESSIONS TABLE
+-- =============================================================================
+-- seating_config stores the section grid blueprint as JSONB:
+-- { "choir": { "rows": 5, "cols": 4 }, "left": { "rows": 8, "cols": 5 }, ... }
+
+CREATE TABLE IF NOT EXISTS public.sessions (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    conference_id    UUID NOT NULL REFERENCES public.conferences(id) ON DELETE CASCADE,
+    name             TEXT NOT NULL,
+    date             DATE,
+    time             TIME,
+    description      TEXT,
+    seating_config   JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_by       UUID REFERENCES public.profiles(id),
+    created_at       TIMESTAMPTZ DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 4. DIGNITARIES TABLE
+-- =============================================================================
+-- NOT "attendees" — the table is called "dignitaries".
+-- title is always free text (e.g., "Presiding Bishop", "H.E.", "Minister of Interior")
+-- picture_url stores the full public URL from Supabase Storage, not base64.
+-- UNIQUE constraint on (session_id, section, row_num, col_num) prevents double-booking.
+
+CREATE TABLE IF NOT EXISTS public.dignitaries (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id   UUID NOT NULL REFERENCES public.sessions(id) ON DELETE CASCADE,
+    name         TEXT NOT NULL,
+    title        TEXT NOT NULL,
+    church       TEXT,
+    extension    TEXT,
+    section      TEXT,
+    row_num      INTEGER,
+    col_num      INTEGER,
+    status       TEXT NOT NULL DEFAULT 'pending'
+                   CHECK (status IN ('pending', 'arrived', 'seated', 'absent')),
+    notes        TEXT,
+    picture_url  TEXT,
+    created_by   UUID REFERENCES public.profiles(id),
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (session_id, section, row_num, col_num)
+);
+
+ALTER TABLE public.dignitaries ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- 5. AUTO-CREATE PROFILE TRIGGER
+-- =============================================================================
+-- When a new user signs up via Supabase Auth, this trigger automatically
+-- creates a row in public.profiles with role = 'protocol' (view-only).
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, name, role)
-  VALUES (
-    NEW.id, 
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'Unnamed User'), 
-    'protocol' -- Default role is protocol (view only)
-  );
-  RETURN NEW;
+    INSERT INTO public.profiles (id, full_name, role)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', 'Unnamed'),
+        'protocol'
+    );
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- =============================================================================
+-- 6. HELPER FUNCTION: Check if user is editor or admin
+-- =============================================================================
 
--- 4. Create Conferences Table
-CREATE TABLE public.conferences (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  name TEXT NOT NULL,
-  date DATE,
-  venue TEXT,
-  description TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-ALTER TABLE public.conferences ENABLE ROW LEVEL SECURITY;
-
-
--- 5. Create Sessions Table
-CREATE TABLE public.sessions (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  conference_id UUID REFERENCES public.conferences(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  date DATE,
-  time TIME,
-  description TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
-
-
--- 6. Create Seating Configs Table
--- Stores the rows/cols for each section in a session
-CREATE TABLE public.seating_configs (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  session_id UUID REFERENCES public.sessions(id) ON DELETE CASCADE NOT NULL,
-  section_id TEXT NOT NULL, -- e.g. 'choir', 'left', 'middle'
-  rows INTEGER NOT NULL DEFAULT 0,
-  cols INTEGER NOT NULL DEFAULT 0,
-  UNIQUE(session_id, section_id)
-);
-ALTER TABLE public.seating_configs ENABLE ROW LEVEL SECURITY;
-
-
--- 7. Create Attendees Table
-CREATE TYPE attendance_status AS ENUM ('pending', 'arrived', 'seated', 'absent');
-
-CREATE TABLE public.attendees (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  session_id UUID REFERENCES public.sessions(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  title TEXT, -- User-inputted string (e.g. Bishop, Hon, Dr.)
-  church TEXT,
-  extension TEXT,
-  section_id TEXT, -- Should match a valid UI section
-  row_num INTEGER,
-  col_num INTEGER,
-  status attendance_status DEFAULT 'pending'::attendance_status NOT NULL,
-  notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  -- Ensure row/col uniqueness within a section per session
-  UNIQUE(session_id, section_id, row_num, col_num)
-);
-ALTER TABLE public.attendees ENABLE ROW LEVEL SECURITY;
-
-
--- 8. RLS Policies for Core Data Tables (Conferences, Sessions, Configs, Attendees)
-
--- Helper function to check if user has edit privileges (Admin or Editor)
 CREATE OR REPLACE FUNCTION public.is_editor_or_admin()
 RETURNS BOOLEAN AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role IN ('admin', 'editor')
-  );
+    SELECT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role IN ('admin', 'editor')
+    );
 $$ LANGUAGE sql SECURITY DEFINER;
 
--- Applies to conferences, sessions, seating_configs, attendees:
--- READ: Everyone (authenticated) can read all data
-CREATE POLICY "Anyone can view conferences" ON public.conferences FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Anyone can view sessions" ON public.sessions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Anyone can view configs" ON public.seating_configs FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Anyone can view attendees" ON public.attendees FOR SELECT USING (auth.role() = 'authenticated');
+-- =============================================================================
+-- 7. ROW LEVEL SECURITY POLICIES
+-- =============================================================================
 
--- MUTATE: Only Admins and Editors can Insert/Update/Delete core data
-CREATE POLICY "Editors/Admins can insert conferences" ON public.conferences FOR INSERT WITH CHECK (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can update conferences" ON public.conferences FOR UPDATE USING (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can delete conferences" ON public.conferences FOR DELETE USING (public.is_editor_or_admin());
+-- ── Conferences ──
+-- All authenticated users can read
+CREATE POLICY "conferences_read" ON public.conferences
+    FOR SELECT USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Editors/Admins can insert sessions" ON public.sessions FOR INSERT WITH CHECK (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can update sessions" ON public.sessions FOR UPDATE USING (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can delete sessions" ON public.sessions FOR DELETE USING (public.is_editor_or_admin());
+-- Only editors/admins can insert
+CREATE POLICY "conferences_insert" ON public.conferences
+    FOR INSERT WITH CHECK (public.is_editor_or_admin());
 
-CREATE POLICY "Editors/Admins can insert configs" ON public.seating_configs FOR INSERT WITH CHECK (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can update configs" ON public.seating_configs FOR UPDATE USING (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can delete configs" ON public.seating_configs FOR DELETE USING (public.is_editor_or_admin());
+-- Only editors/admins can update
+CREATE POLICY "conferences_update" ON public.conferences
+    FOR UPDATE
+    USING (public.is_editor_or_admin())
+    WITH CHECK (public.is_editor_or_admin());
 
-CREATE POLICY "Editors/Admins can insert attendees" ON public.attendees FOR INSERT WITH CHECK (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can update attendees" ON public.attendees FOR UPDATE USING (public.is_editor_or_admin());
-CREATE POLICY "Editors/Admins can delete attendees" ON public.attendees FOR DELETE USING (public.is_editor_or_admin());
+-- Only editors/admins can delete (backend further restricts to admin-only)
+CREATE POLICY "conferences_delete" ON public.conferences
+    FOR DELETE USING (public.is_editor_or_admin());
 
--- Real-time broadcasts
-alter publication supabase_realtime add table public.attendees;
+-- ── Sessions ──
+CREATE POLICY "sessions_read" ON public.sessions
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "sessions_insert" ON public.sessions
+    FOR INSERT WITH CHECK (public.is_editor_or_admin());
+
+CREATE POLICY "sessions_update" ON public.sessions
+    FOR UPDATE
+    USING (public.is_editor_or_admin())
+    WITH CHECK (public.is_editor_or_admin());
+
+CREATE POLICY "sessions_delete" ON public.sessions
+    FOR DELETE USING (public.is_editor_or_admin());
+
+-- ── Dignitaries ──
+CREATE POLICY "dignitaries_read" ON public.dignitaries
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "dignitaries_insert" ON public.dignitaries
+    FOR INSERT WITH CHECK (public.is_editor_or_admin());
+
+CREATE POLICY "dignitaries_update" ON public.dignitaries
+    FOR UPDATE
+    USING (public.is_editor_or_admin())
+    WITH CHECK (public.is_editor_or_admin());
+
+CREATE POLICY "dignitaries_delete" ON public.dignitaries
+    FOR DELETE USING (public.is_editor_or_admin());
+
+-- =============================================================================
+-- 8. REALTIME
+-- =============================================================================
+-- Enable realtime for the dignitaries table so the frontend can subscribe
+-- to live updates via Supabase channels.
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.dignitaries;
+
+-- =============================================================================
+-- 9. SUPABASE STORAGE BUCKET (run manually in Dashboard → Storage)
+-- =============================================================================
+-- Bucket name:  dignitary-photos
+-- Access:       Public read, authenticated write
+-- File naming:  {session_id}/{dignitary_id}.jpg
+--
+-- NOTE: Storage buckets cannot be created via SQL. Use the Supabase Dashboard:
+--   1. Go to Storage → New Bucket
+--   2. Name: "dignitary-photos"
+--   3. Check "Public bucket" (for public read access)
+--   4. Add policy: allow INSERT for authenticated users
+
+-- =============================================================================
+-- CLEANUP SQL (only if you need to reset and re-run)
+-- =============================================================================
+-- Uncomment the following lines if you need to drop everything and start fresh:
+--
+-- DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+-- DROP FUNCTION IF EXISTS public.handle_new_user();
+-- DROP FUNCTION IF EXISTS public.is_editor_or_admin();
+-- DROP TABLE IF EXISTS public.dignitaries CASCADE;
+-- DROP TABLE IF EXISTS public.sessions CASCADE;
+-- DROP TABLE IF EXISTS public.conferences CASCADE;
+-- DROP TABLE IF EXISTS public.profiles CASCADE;

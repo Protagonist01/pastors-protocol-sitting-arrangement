@@ -1,27 +1,27 @@
+// Sections — matches AGENT_CONTEXT.md §9 exactly
 export const SECTIONS = [
-  { id: 'choir_top', label: 'Choir (Top)',            color: '#f5c69d', textColor: '#000', closed: false },
-  { id: 'altar',     label: 'Altar',                  color: '#5eac24', textColor: '#fff', closed: true  },
-  { id: 'vvip',      label: 'SETMAN / VVIP / CEC',    color: '#d1d5db', textColor: '#000', closed: true  },
-  { id: 'choir_left',label: 'Choir (Left)',           color: '#f5c69d', textColor: '#000', closed: false },
-  { id: 'left',      label: 'Left Section',           color: '#e02424', textColor: '#fff', closed: false },
-  { id: 'middle',    label: 'Middle Section',         color: '#2fa3e6', textColor: '#fff', closed: false },
-  { id: 'right',     label: 'Right Section',          color: '#fcf87c', textColor: '#000', closed: true  },
-  { id: 'minister',  label: 'Minister Section',       color: '#637381', textColor: '#fff', closed: true  },
+  { id: 'choir',    label: 'Choir',            color: '#e8843a' },
+  { id: 'left',     label: 'Left Section',     color: '#c0392b' },
+  { id: 'middle',   label: 'Middle Section',   color: '#2471a3' },
+  { id: 'right',    label: 'Right Section',    color: '#b8920a' },
+  { id: 'minister', label: 'Minister Section', color: '#4a5568' },
+  // --- closed (display only, not assignable) ---
+  { id: 'vvip',     label: 'SETMAN / VVIP / CEC', closed: true, color: '#d1d5db' },
+  { id: 'altar',    label: 'Altar',               closed: true, color: '#5eac24' },
 ];
 
 export const OPEN_SECTIONS = SECTIONS.filter(s => !s.closed);
 
+// Default grid sizes per AGENT_CONTEXT.md §9
 export const DEFAULT_CONFIG = {
-  choir_top: { rows: 4,  cols: 4 },
-  choir_left:{ rows: 4,  cols: 4 },
-  left:      { rows: 8,  cols: 5 },
-  middle:    { rows: 10, cols: 6 },
-  right:     { rows: 8,  cols: 5 },
-  minister:  { rows: 6,  cols: 5 },
-  vvip:      { rows: 3,  cols: 4 },
-  altar:     { rows: 2,  cols: 5 },
+  choir:    { rows: 5,  cols: 4 },
+  left:     { rows: 8,  cols: 5 },
+  middle:   { rows: 10, cols: 6 },
+  right:    { rows: 8,  cols: 5 },
+  minister: { rows: 6,  cols: 5 },
 };
 
+// Status lifecycle — AGENT_CONTEXT.md §10
 export const STATUSES = [
   { id: 'pending', label: 'Not Arrived', color: '#64748b', bg: '#1e293b'   },
   { id: 'arrived', label: 'Arrived',     color: '#f59e0b', bg: '#451a0344' },

@@ -16,9 +16,7 @@ export function Header({ confName, sessionName }) {
   };
 
   const handleRefreshProfile = async () => {
-    console.log('Refreshing profile...');
     await reloadProfile();
-    console.log('Profile after refresh:', profile);
   };
 
   const isDashboard = location.pathname === '/';
@@ -58,12 +56,12 @@ export function Header({ confName, sessionName }) {
 
         <div className="header-user">
           <div className="header-user-info">
-            <div className="header-user-name">{profile?.name || user?.email || 'Loading...'}</div>
+            <div className="header-user-name">{profile?.full_name || user?.email || 'Loading...'}</div>
             <RoleTag role={profile?.role}/>
           </div>
           <div className="header-avatar"
             style={{ background: `${roleColor}22`, border: `2px solid ${roleColor}55` }}>
-            {(profile?.name || user?.email)?.[0]?.toUpperCase()}
+            {(profile?.full_name || user?.email)?.[0]?.toUpperCase()}
           </div>
           <button className="btn btn-ghost btn-sm" onClick={handleRefreshProfile} title="Refresh profile" style={{ fontSize: 16 }}>
             ↻
@@ -93,10 +91,10 @@ export function Header({ confName, sessionName }) {
         <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0', borderBottom:'1px solid #143d22', marginBottom:12 }}>
           <div className="header-avatar"
             style={{ background: `${roleColor}22`, border: `2px solid ${roleColor}55` }}>
-            {(profile?.name || user?.email)?.[0]?.toUpperCase()}
+            {(profile?.full_name || user?.email)?.[0]?.toUpperCase()}
           </div>
           <div>
-            <div className="header-user-name">{profile?.name || user?.email}</div>
+            <div className="header-user-name">{profile?.full_name || user?.email}</div>
             <RoleTag role={profile?.role}/>
           </div>
         </div>

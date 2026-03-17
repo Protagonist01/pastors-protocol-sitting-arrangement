@@ -19,8 +19,6 @@ function ConfForm({ isEdit, onSave, onCancel }) {
     try {
       await onSave(f);
     } catch (err) {
-      console.error('Create conference error:', err);
-      // Extract error message from response
       const msg = err.response?.data?.detail || err.message || 'Failed to create conference';
       setError(msg);
     } finally {
@@ -47,7 +45,7 @@ function ConfForm({ isEdit, onSave, onCancel }) {
 }
 
 export function Dashboard() {
-  const { isEditorOrAdmin, profile, loading: profileLoading, user } = useAuth();
+  const { isEditorOrAdmin } = useAuth();
   const navigate = useNavigate();
   const [showNew, setShowNew] = useState(false);
 
@@ -61,10 +59,6 @@ export function Dashboard() {
   return (
     <div>
       <Header />
-      {/* Debug info - remove in production */}
-      <div style={{ background: profileLoading ? '#f59e0b' : (profile?.role === 'admin' || profile?.role === 'editor') ? '#22c55e' : '#ef4444', padding: '8px 16px', textAlign: 'center', fontSize: 12 }}>
-        {profileLoading ? 'Loading profile...' : `Role: ${profile?.role || 'none'} | isEditorOrAdmin: ${Boolean(isEditorOrAdmin)} | User ID: ${user?.id?.slice(0,8)}...`}
-      </div>
       <div className="page-container fade-in">
         <div className="page-header">
           <div>
@@ -119,7 +113,6 @@ export function Dashboard() {
               await createConference.mutateAsync(f);
               setShowNew(false);
             } catch (err) {
-              console.error('Create conference error:', err);
               const msg = err.response?.data?.detail || err.message || 'Failed to create conference';
               throw new Error(msg);
             }

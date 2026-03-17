@@ -2,10 +2,11 @@ import { SECTIONS, DEFAULT_CONFIG, STATUSES, statusColor } from '../lib/constant
 
 export function SeatGrid({ sectionId, cfg, attendees, canEdit, onSeatClick }) {
   const sec = SECTIONS.find(s => s.id === sectionId);
-  const cfgMap = (cfg || []).reduce((acc, c) => ({ ...acc, [c.section_id]: c }), {});
+  // cfg is now a JSONB object like { choir: { rows: 5, cols: 4 }, ... }
+  const cfgMap = cfg || {};
   const c   = cfgMap[sectionId] || DEFAULT_CONFIG[sectionId] || { rows:5, cols:5 };
   
-  const getAtt = (r, col) => attendees.find(d => d.section_id === sectionId && d.row_num === r && d.col_num === col);
+  const getAtt = (r, col) => attendees.find(d => d.section === sectionId && d.row_num === r && d.col_num === col);
 
   return (
     <div className="seat-grid-wrap fade-in">
@@ -52,7 +53,7 @@ export function SeatGrid({ sectionId, cfg, attendees, canEdit, onSeatClick }) {
         ))}
       </div>
       <p className="seat-grid-hint">
-        {canEdit ? 'Click occupied seat to view profile · Click empty seat to assign an attendee' : 'Click a seat to view profile'}
+        {canEdit ? 'Click occupied seat to view profile · Click empty seat to assign a dignitary' : 'Click a seat to view profile'}
       </p>
     </div>
   );

@@ -1,8 +1,10 @@
 import { SECTIONS, DEFAULT_CONFIG } from '../lib/constants';
 
 export function VenueMap({ cfg, attendees, activeSec, onSec }) {
-  const getCount = id => attendees.filter(d => d.section_id === id).length;
-  const cfgMap = (cfg || []).reduce((acc, c) => ({ ...acc, [c.section_id]: c }), {});
+  // cfg is now a JSONB object like { choir: { rows: 5, cols: 4 }, ... }
+  const cfgMap = cfg || {};
+
+  const getCount = id => attendees.filter(d => d.section === id).length;
   
   const getTotal = id => {
     const c = cfgMap[id] || DEFAULT_CONFIG[id];
@@ -18,7 +20,7 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
     
     return (
       <div className={`section-block${isAct ? ' active-sec' : ''}${isClosed ? ' closed-sec' : ''}`}
-        style={{ background:sec?.color, color:sec?.textColor, flexDirection:'column', cursor: isClosed ? 'not-allowed' : 'pointer', border: isAct ? '3px solid #c9a84c' : '1px solid rgba(0,0,0,0.15)', ...ex }}
+        style={{ background:sec?.color, color: isClosed ? '#000' : '#fff', flexDirection:'column', cursor: isClosed ? 'not-allowed' : 'pointer', border: isAct ? '3px solid #c9a84c' : '1px solid rgba(0,0,0,0.15)', ...ex }}
         onClick={() => !isClosed && onSec(id)}
         title={isClosed ? `${label || sec?.label} (Closed)` : `${label || sec?.label} — ${cnt} of ${tot} assigned`}>
         <div style={{ fontWeight: 800, fontSize: 11, lineHeight: 1.3, textTransform: 'uppercase', whiteSpace: 'pre-line' }}>{label || sec?.label}</div>
@@ -37,10 +39,9 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
 
   const Arrow = ({ dir, label, style }) => {
     const isUp = dir === 'up';
-    const isDown = dir === 'down';
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', color: '#e2f0e6', ...style }}>
-        {label && isDown && <span style={{ marginBottom: 4 }}>{label}</span>}
+        {label && !isUp && <span style={{ marginBottom: 4 }}>{label}</span>}
         <span style={{ fontSize: 16, lineHeight: 1 }}>{isUp ? '↑' : '↓'}</span>
         {label && isUp && <span style={{ marginTop: 4 }}>{label}</span>}
       </div>
@@ -54,7 +55,7 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
         
         {/* TOP ROW */}
         <div className="venue-top-row">
-          <Block id="choir_top" label="CHOIR" style={{ width: 110, height: 110, borderRadius: 2 }} hideStats />
+          <Block id="choir" label="CHOIR" style={{ width: 130, height: 110, borderRadius: 2 }} />
           
           <div className="venue-altar-wrapper">
             <Block id="altar" label="ALTAR" style={{ height: 110, borderRadius: 2 }} />
@@ -77,10 +78,6 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
           
           <Arrow dir="down" label="PP" style={{ width: 40, marginRight: 20 }} />
           
-          <Block id="choir_left" label="CHOIR" style={{ width: 110, height: 110, borderRadius: 2 }} />
-          
-          <Arrow dir="up" label="CP" style={{ width: 40 }} />
-          
           <Block id="left" label="LEFT SECTION" style={{ width: 105, height: 110, borderRadius: 16 }} />
           
           <Arrow dir="up" label="CP" style={{ width: 40 }} />
@@ -91,7 +88,7 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
           
           <Block id="right" label="RIGHT SECTION" style={{ width: 105, height: 110, borderRadius: 16 }} />
           
-          <div className="venue-closed-label">CLOSED</div>
+          <Arrow dir="up" label="CP" style={{ width: 40 }} />
           
           <Block id="minister" label={"MINISTER\nSECTION"} style={{ flex: 1, minWidth: 140, height: 140, borderRadius: 2 }} />
         </div>

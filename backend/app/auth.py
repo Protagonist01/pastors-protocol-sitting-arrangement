@@ -48,3 +48,22 @@ def require_editor_or_admin(user = Depends(get_current_user), supabase: Client =
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Permission check failed: {str(e)}"
         )
+
+def require_admin(user = Depends(get_current_user), supabase: Client = Depends(get_supabase)):
+    """
+    Checks the user's profile to see if they hold 'admin' role.
+    """
+    try:
+        res = supabase.table("profiles").select("role").eq("id", user.id).single().execute()
+        role = res.data.get("role")
+        if role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action. Admin role required."
+            )
+        return user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission check failed: {str(e)}"
+        )

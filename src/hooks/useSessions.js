@@ -9,7 +9,7 @@ export function useSessions(confId) {
     queryKey: ['sessions', confId],
     queryFn: async () => {
       if (!confId) return [];
-      const { data } = await api.get(`/sessions/${confId}`);
+      const { data } = await api.get(`/conferences/${confId}/sessions`);
       return data;
     },
     enabled: !!confId,
@@ -17,12 +17,32 @@ export function useSessions(confId) {
 
   const createSession = useMutation({
     mutationFn: async (newSess) => {
-      const { data } = await api.post('/sessions/', newSess);
+      const { data } = await api.post(`/conferences/${confId}/sessions`, newSess);
       return data;
     },
     onSuccess: () => {
       if (confId) queryClient.invalidateQueries({ queryKey: ['sessions', confId] });
       queryClient.invalidateQueries({ queryKey: ['conferences'] });
+    }
+  });
+
+  const updateSession = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { data: result } = await api.patch(`/sessions/${id}`, data);
+      return result;
+    },
+    onSuccess: () => {
+      if (confId) queryClient.invalidateQueries({ queryKey: ['sessions', confId] });
+    }
+  });
+
+  const updateSeatingConfig = useMutation({
+    mutationFn: async ({ sessionId, config }) => {
+      const { data } = await api.patch(`/sessions/${sessionId}/seating-config`, config);
+      return data;
+    },
+    onSuccess: () => {
+      if (confId) queryClient.invalidateQueries({ queryKey: ['sessions', confId] });
     }
   });
 
@@ -39,23 +59,37 @@ export function useSessions(confId) {
   return {
     sessionsQuery,
     createSession,
+    updateSession,
+    updateSeatingConfig,
     deleteSession,
   };
 }
 
-/* ── Fetch a single session's data by ID (separate hook to respect Rules of Hooks) ── */
+/* ── Fetch a single session by ID ── */
+export function useSession(sessionId) {
+  return useQuery({
+    queryKey: ['session', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return null;
+      const { data } = await api.get(`/sessions/${sessionId}`);
+      return data;
+    },
+    enabled: !!sessionId,
+  });
+}
+
+/* ── Fetch session data + parent conference (efficient: 2 API calls max) ── */
 export function useSessionData(sessionId) {
   return useQuery({
     queryKey: ['sessionData', sessionId],
     queryFn: async () => {
       if (!sessionId) return null;
-      const { data: confs } = await api.get('/conferences/');
-      for (const conf of confs) {
-        const { data: sData } = await api.get(`/sessions/${conf.id}`);
-        const sess = sData.find(s => s.id === sessionId);
-        if (sess) return { session: sess, conf };
-      }
-      return null;
+      // Fetch the session directly via GET /api/sessions/{id}
+      const { data: session } = await api.get(`/sessions/${sessionId}`);
+      if (!session) return null;
+      // Fetch the parent conference
+      const { data: conf } = await api.get(`/conferences/${session.conference_id}`);
+      return { session, conf };
     },
     enabled: !!sessionId,
   });

@@ -2,16 +2,16 @@ import { SECTIONS, STATUSES, statusColor } from '../lib/constants';
 import { ModalHeader } from './UI';
 
 export function AttendeeProfile({ atn, canEdit, onEdit, onStatus, onClose }) {
-  const sec = SECTIONS.find(s => s.id === atn.section_id);
+  const sec = SECTIONS.find(s => s.id === atn.section);
   
   return <>
-    <ModalHeader title="Attendee Profile" sub={atn.church ? `${atn.church}${atn.extension ? ' — ' + atn.extension : ''}` : ''} onClose={onClose}/>
+    <ModalHeader title="Dignitary Profile" sub={atn.church ? `${atn.church}${atn.extension ? ' — ' + atn.extension : ''}` : ''} onClose={onClose}/>
     <div className="modal-body">
       <div className="profile-header">
         <div className="profile-avatar"
           style={{ border:`3px solid ${statusColor[atn.status]||'#143d22'}55` }}>
-          {atn.picture
-            ? <img src={atn.picture} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+          {atn.picture_url
+            ? <img src={atn.picture_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
             : atn.name?.[0]?.toUpperCase()}
         </div>
         <div style={{ flex:1 }}>

@@ -17,11 +17,14 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Add response interceptor to log errors
+// Handle 401 → sign out (per AGENT_CONTEXT.md §7.3)
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+  async (error) => {
+    if (error.response?.status === 401) {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    }
     return Promise.reject(error);
   }
 );

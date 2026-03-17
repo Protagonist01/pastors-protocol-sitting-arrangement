@@ -1,7 +1,30 @@
 from fastapi import APIRouter
-from .endpoints import conferences, sessions, attendees
+from .endpoints import conferences, sessions, dignitaries, users
 
 api_router = APIRouter()
+
+# --- Users ---
+api_router.include_router(users.router, prefix="/users", tags=["users"])
+
+# --- Conferences ---
 api_router.include_router(conferences.router, prefix="/conferences", tags=["conferences"])
-api_router.include_router(sessions.router, prefix="/sessions", tags=["sessions"])
-api_router.include_router(attendees.router, prefix="/attendees", tags=["attendees"])
+
+# --- Sessions (nested under conferences for list/create, direct for get/update/delete) ---
+# GET  /api/conferences/{conf_id}/sessions  — list sessions for a conference
+# POST /api/conferences/{conf_id}/sessions  — create session in a conference
+api_router.include_router(sessions.nested_router, prefix="/conferences", tags=["sessions"])
+# GET    /api/sessions/{session_id}                — get a session
+# PATCH  /api/sessions/{session_id}                — update a session
+# PATCH  /api/sessions/{session_id}/seating-config — update seating config
+# DELETE /api/sessions/{session_id}                — delete a session
+api_router.include_router(sessions.direct_router, prefix="/sessions", tags=["sessions"])
+
+# --- Dignitaries (nested under sessions for list/create, direct for get/update/delete) ---
+# GET  /api/sessions/{session_id}/dignitaries  — list dignitaries for a session
+# POST /api/sessions/{session_id}/dignitaries  — create dignitary in a session
+api_router.include_router(dignitaries.nested_router, prefix="/sessions", tags=["dignitaries"])
+# GET    /api/dignitaries/{id}         — get a dignitary
+# PATCH  /api/dignitaries/{id}         — update a dignitary
+# PATCH  /api/dignitaries/{id}/status  — update dignitary status
+# DELETE /api/dignitaries/{id}         — delete a dignitary
+api_router.include_router(dignitaries.direct_router, prefix="/dignitaries", tags=["dignitaries"])
