@@ -19,7 +19,10 @@ function ConfForm({ isEdit, onSave, onCancel }) {
     try {
       await onSave(f);
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message || 'Failed to create conference';
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : Array.isArray(detail) ? detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+        : err?.message || 'Failed to create conference';
       setError(msg);
     } finally {
       setSaving(false);
