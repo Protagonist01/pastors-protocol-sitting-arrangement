@@ -20,10 +20,15 @@ export function Loader({ text = "Loading Protocol System…" }) {
 }
 
 export function Modal({ children, onClose }) {
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal-overlay"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-panel">
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>

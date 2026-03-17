@@ -10,9 +10,19 @@ body { background: #051008; color: #e2f0e6; font-family: 'DM Sans', sans-serif; 
 .card-hover:hover { border-color: #c9a84c44; box-shadow: 0 0 20px #c9a84c0e; transform: translateY(-1px); }
 
 /* ── Inputs ── */
-.input { background: #051008; border: 1px solid #143d22; border-radius: 8px; color: #e2f0e6; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; width: 100%; transition: border .2s; outline: none; }
+.input { background: #051008; border: 1px solid #143d22; border-radius: 8px; color: #e2f0e6; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; width: 100%; transition: border .2s; outline: none; pointer-events: auto; }
 .input:focus { border-color: #c9a84c88; box-shadow: 0 0 0 3px #c9a84c0e; }
 .input::placeholder { color: #4f6b56; }
+.input[type="date"]::-webkit-calendar-picker-indicator,
+.input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.6;
+}
+.input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
 select.input option { background: #0a1a10; }
 
 /* ── Buttons ── */
