@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { FormField } from '../components/UI';
 
 export function AuthPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
@@ -19,8 +21,12 @@ export function AuthPage() {
     
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
+        // Explicitly navigate after successful login
+        if (data?.session) {
+          navigate('/');
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
