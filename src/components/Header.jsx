@@ -16,7 +16,9 @@ export function Header({ confName, sessionName }) {
   };
 
   const handleRefreshProfile = async () => {
+    console.log('Refreshing profile...');
     await reloadProfile();
+    console.log('Profile after refresh:', profile);
   };
 
   const isDashboard = location.pathname === '/';

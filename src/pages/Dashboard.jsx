@@ -8,11 +8,27 @@ import { useConferences } from '../hooks/useConferences';
 
 function ConfForm({ isEdit, onSave, onCancel }) {
   const [f, setF] = useState({ name:'', date:'', venue:'', description:'' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const s = (k, v) => setF(x => ({ ...x, [k]:v }));
+
+  const handleSave = async () => {
+    if (!f.name) return;
+    setSaving(true);
+    setError('');
+    try {
+      await onSave(f);
+    } catch (err) {
+      setError(err.message || 'Failed to create conference');
+    } finally {
+      setSaving(false);
+    }
+  };
   
   return <>
     <ModalHeader title={isEdit ? 'Edit Conference' : 'New Conference'} onClose={onCancel}/>
     <div className="modal-body">
+      {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13 }}>{error}</p>}
       <FormField label="Conference Name *"><input className="input" placeholder="General Council 2025" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
       <div className="form-grid-2">
         <FormField label="Date"><input className="input" type="date" value={f.date} onChange={e=>s('date',e.target.value)}/></FormField>
@@ -20,15 +36,15 @@ function ConfForm({ isEdit, onSave, onCancel }) {
       </div>
       <FormField label="Description"><textarea className="input" rows={3} placeholder="Brief overview…" value={f.description} onChange={e=>s('description',e.target.value)} style={{ resize:'vertical' }}/></FormField>
       <div className="form-actions">
-        <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
-        <button className="btn btn-gold" onClick={() => f.name && onSave(f)} disabled={!f.name}>{isEdit ? 'Save Changes' : 'Create Conference'}</button>
+        <button className="btn btn-outline" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn btn-gold" onClick={handleSave} disabled={!f.name || saving}>{saving ? 'Creating...' : (isEdit ? 'Save Changes' : 'Create Conference')}</button>
       </div>
     </div>
   </>;
 }
 
 export function Dashboard() {
-  const { isEditorOrAdmin } = useAuth();
+  const { isEditorOrAdmin, profile, loading: profileLoading, user } = useAuth();
   const navigate = useNavigate();
   const [showNew, setShowNew] = useState(false);
 
@@ -42,6 +58,10 @@ export function Dashboard() {
   return (
     <div>
       <Header />
+      {/* Debug info - remove in production */}
+      <div style={{ background: profileLoading ? '#f59e0b' : (profile?.role === 'admin' || profile?.role === 'editor') ? '#22c55e' : '#ef4444', padding: '8px 16px', textAlign: 'center', fontSize: 12 }}>
+        {profileLoading ? 'Loading profile...' : `Role: ${profile?.role || 'none'} | isEditorOrAdmin: ${Boolean(isEditorOrAdmin)} | User ID: ${user?.id?.slice(0,8)}...`}
+      </div>
       <div className="page-container fade-in">
         <div className="page-header">
           <div>
