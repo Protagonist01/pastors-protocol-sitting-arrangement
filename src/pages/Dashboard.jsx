@@ -19,7 +19,10 @@ function ConfForm({ isEdit, onSave, onCancel }) {
     try {
       await onSave(f);
     } catch (err) {
-      setError(err.message || 'Failed to create conference');
+      console.error('Create conference error:', err);
+      // Extract error message from response
+      const msg = err.response?.data?.detail || err.message || 'Failed to create conference';
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -28,7 +31,7 @@ function ConfForm({ isEdit, onSave, onCancel }) {
   return <>
     <ModalHeader title={isEdit ? 'Edit Conference' : 'New Conference'} onClose={onCancel}/>
     <div className="modal-body">
-      {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13, padding: 8, background: '#ef444422', borderRadius: 6 }}>{error}</p>}
       <FormField label="Conference Name *"><input className="input" placeholder="General Council 2025" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
       <div className="form-grid-2">
         <FormField label="Date"><input className="input" type="date" value={f.date} onChange={e=>s('date',e.target.value)}/></FormField>
@@ -111,8 +114,15 @@ export function Dashboard() {
 
       {showNew && (
         <Modal onClose={() => setShowNew(false)}>
-          <ConfForm isEdit={false} onSave={(f) => {
-            createConference.mutate(f, { onSuccess: () => setShowNew(false) })
+          <ConfForm isEdit={false} onSave={async (f) => {
+            try {
+              await createConference.mutateAsync(f);
+              setShowNew(false);
+            } catch (err) {
+              console.error('Create conference error:', err);
+              const msg = err.response?.data?.detail || err.message || 'Failed to create conference';
+              throw new Error(msg);
+            }
           }} onCancel={() => setShowNew(false)} />
         </Modal>
       )}

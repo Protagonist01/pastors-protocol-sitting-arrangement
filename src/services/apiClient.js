@@ -16,3 +16,12 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// Add response interceptor to log errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
