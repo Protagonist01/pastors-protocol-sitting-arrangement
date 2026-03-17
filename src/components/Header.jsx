@@ -56,7 +56,7 @@ export function Header({ confName, sessionName }) {
 
         <div className="header-user">
           <div className="header-user-info">
-            <div className="header-user-name">{profile?.name || user?.email}</div>
+            <div className="header-user-name">{profile?.name || user?.email || 'Loading...'}</div>
             <RoleTag role={profile?.role}/>
           </div>
           <div className="header-avatar"
