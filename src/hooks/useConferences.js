@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/apiClient';
 
+/* ── List all conferences ── */
 export function useConferences() {
   const queryClient = useQueryClient();
 
-  // Queries
   const conferencesQuery = useQuery({
     queryKey: ['conferences'],
     queryFn: async () => {
@@ -13,17 +13,6 @@ export function useConferences() {
     }
   });
 
-  const conferenceQuery = (confId) => useQuery({
-    queryKey: ['conference', confId],
-    queryFn: async () => {
-      if (!confId) return null;
-      const { data } = await api.get(`/conferences/${confId}`);
-      return data;
-    },
-    enabled: !!confId,
-  });
-
-  // Mutations
   const createConference = useMutation({
     mutationFn: async (newConf) => {
       const { data } = await api.post('/conferences/', newConf);
@@ -56,9 +45,21 @@ export function useConferences() {
 
   return {
     conferencesQuery,
-    conferenceQuery,
     createConference,
     updateConference,
     deleteConference,
   };
+}
+
+/* ── Fetch a single conference by ID (separate hook to respect Rules of Hooks) ── */
+export function useConference(confId) {
+  return useQuery({
+    queryKey: ['conference', confId],
+    queryFn: async () => {
+      if (!confId) return null;
+      const { data } = await api.get(`/conferences/${confId}`);
+      return data;
+    },
+    enabled: !!confId,
+  });
 }

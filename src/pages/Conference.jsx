@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../components/AuthProvider';
+import { useAuth } from '../components/auth-context';
 import { Loader, Modal, ModalHeader, FormField } from '../components/UI';
 import { Header } from '../components/Header';
 import { format } from 'date-fns';
-import { useConferences } from '../hooks/useConferences';
+import { useConference } from '../hooks/useConferences';
 import { useSessions } from '../hooks/useSessions';
 
 function SessionForm({ isEdit, confId, onSave, onCancel }) {
@@ -13,14 +13,14 @@ function SessionForm({ isEdit, confId, onSave, onCancel }) {
   
   return <>
     <ModalHeader title={isEdit ? 'Edit Session' : 'New Session'} onClose={onCancel}/>
-    <div style={{ padding:24 }}>
+    <div className="modal-body">
       <FormField label="Session Name *"><input className="input" placeholder="Opening Night" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+      <div className="form-grid-2">
         <FormField label="Date"><input className="input" type="date" value={f.date} onChange={e=>s('date',e.target.value)}/></FormField>
         <FormField label="Time"><input className="input" type="time" value={f.time} onChange={e=>s('time',e.target.value)}/></FormField>
       </div>
       <FormField label="Description"><textarea className="input" rows={3} placeholder="Brief overview…" value={f.description} onChange={e=>s('description',e.target.value)} style={{ resize:'vertical' }}/></FormField>
-      <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:8 }}>
+      <div className="form-actions">
         <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
         <button className="btn btn-gold" onClick={() => f.name && onSave({ ...f, conference_id: confId })} disabled={!f.name}>{isEdit ? 'Save Changes' : 'Add Session'}</button>
       </div>
@@ -34,14 +34,13 @@ export function Conference() {
   const { isEditorOrAdmin } = useAuth();
   const [showNew, setShowNew] = useState(false);
 
-  const { conferenceQuery } = useConferences();
-  const { data: conf, isLoading: isLoadingConf } = conferenceQuery(confId);
+  const { data: conf, isLoading: isLoadingConf } = useConference(confId);
 
   const { sessionsQuery, createSession, deleteSession } = useSessions(confId);
   const { data: sessions, isLoading: isLoadingSessions } = sessionsQuery;
 
   if (isLoadingConf || isLoadingSessions) return <Loader text="Loading Conference Details..." />;
-  if (!conf) return <div style={{ color:'white', textAlign:'center', marginTop:100 }}>Conference not found.</div>;
+  if (!conf) return <div className="empty-state" style={{ marginTop:100 }}>Conference not found.</div>;
 
   const sessList = sessions || [];
 
@@ -49,38 +48,37 @@ export function Conference() {
     <div>
       <Header confName={conf.name} />
       
-      <div style={{ padding:'28px 22px', maxWidth:1100, margin:'0 auto' }} className="fade-in">
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:28, flexWrap:'wrap', gap:12 }}>
+      <div className="page-container fade-in">
+        <div className="page-header page-header--start">
           <div>
-            <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:34, color:'#c9a84c', fontWeight:700, marginBottom:5 }}>{conf.name}</h1>
-            <p style={{ fontSize:13, color:'#4f6b56', marginBottom:4 }}>
+            <h1 className="page-title">{conf.name}</h1>
+            <p className="page-subtitle">
               {conf.date ? format(new Date(conf.date), 'dd MMM yyyy') : '—'} 
               {conf.venue ? ` • ${conf.venue}` : ''}
             </p>
-            {conf.description && <p style={{ color:'#8cb398', fontSize:14, maxWidth:600, lineHeight:1.55 }}>{conf.description}</p>}
+            {conf.description && <p className="page-description">{conf.description}</p>}
           </div>
           <div style={{ display:'flex', gap:8 }}>
-            {/* <button className="btn btn-outline btn-sm">✏ Edit</button> */}
             {isEditorOrAdmin && <button className="btn btn-gold btn-sm" onClick={() => setShowNew(true)}>+ Add Session</button>}
           </div>
         </div>
 
         {sessList.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'80px 0', color:'#4f6b56' }}>
-            <div style={{ fontSize:44, marginBottom:16, opacity:.15 }}>📋</div>
-            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:22, color:'#143d22', marginBottom:8 }}>No sessions yet</p>
-            {isEditorOrAdmin && <p style={{ fontSize:13 }}>Add sessions to configure seating arrangements</p>}
+          <div className="empty-state">
+            <div className="empty-state-icon">📋</div>
+            <p className="empty-state-text">No sessions yet</p>
+            {isEditorOrAdmin && <p className="empty-state-sub">Add sessions to configure seating arrangements</p>}
           </div>
         ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(270px, 1fr))', gap:14 }}>
+          <div className="grid-cards">
             {sessList.map((s, i) => (
-              <div key={s.id} className="card card-hover"
-                style={{ padding:22, cursor:'pointer', animationDelay:`${i*.05}s` }}
+              <div key={s.id} className="card card-hover session-card"
+                style={{ animationDelay:`${i*.05}s` }}
                 onClick={() => navigate(`/session/${s.id}`)}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <h3 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:19, color:'#e2f0e6', marginBottom:4, lineHeight:1.3 }}>{s.name}</h3>
-                    <p style={{ fontSize:12, color:'#4f6b56' }}>
+                <div className="card-top-row">
+                  <div>
+                    <h3 className="session-card-title">{s.name}</h3>
+                    <p className="session-card-meta">
                       {s.date ? format(new Date(s.date), 'dd MMM yyyy') : '—'}
                       {s.time ? ` at ${s.time}` : ''}
                     </p>
@@ -90,9 +88,9 @@ export function Conference() {
                       onClick={e => { e.stopPropagation(); if (window.confirm('Delete session?')) deleteSession.mutate(s.id); }}>🗑</button>
                   )}
                 </div>
-                {s.description && <p style={{ fontSize:12, color:'#8cb398', lineHeight:1.5, marginBottom:10 }}>{s.description}</p>}
-                <div style={{ marginTop:10 }}>
-                  <span style={{ background:'#4f6b560e', border:'1px solid #4f6b5622', color:'#4f6b56', borderRadius:6, padding:'3px 10px', fontSize:11, fontWeight:600 }}>View Seating →</span>
+                {s.description && <p className="session-card-desc">{s.description}</p>}
+                <div className="card-badge-row">
+                  <span className="card-badge card-badge--muted">View Seating →</span>
                 </div>
               </div>
             ))}

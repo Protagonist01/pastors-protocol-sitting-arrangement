@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/apiClient';
 
+/* ── List sessions for a conference ── */
 export function useSessions(confId) {
   const queryClient = useQueryClient();
 
-  // Queries
   const sessionsQuery = useQuery({
     queryKey: ['sessions', confId],
     queryFn: async () => {
@@ -15,26 +15,6 @@ export function useSessions(confId) {
     enabled: !!confId,
   });
 
-  // Helper to fetch session info (find it within a conference)
-  // Note: Backend might need a direct GET /sessions/{id} endpoint later
-  const sessionDataQuery = (sessionId) => useQuery({
-    queryKey: ['sessionData', sessionId],
-    queryFn: async () => {
-      if (!sessionId) return null;
-      // Because we lack a GET /sessions/{id} backend endpoint currently,
-      // we scan conferences. For production, add `GET /sessions/{session_id}` in FastAPI.
-      const { data: confs } = await api.get('/conferences/');
-      for (const conf of confs) {
-        const { data: sData } = await api.get(`/sessions/${conf.id}`);
-        const sess = sData.find(s => s.id === sessionId);
-        if (sess) return { session: sess, conf };
-      }
-      return null;
-    },
-    enabled: !!sessionId,
-  });
-
-  // Mutations
   const createSession = useMutation({
     mutationFn: async (newSess) => {
       const { data } = await api.post('/sessions/', newSess);
@@ -42,7 +22,7 @@ export function useSessions(confId) {
     },
     onSuccess: () => {
       if (confId) queryClient.invalidateQueries({ queryKey: ['sessions', confId] });
-      queryClient.invalidateQueries({ queryKey: ['conferences'] }); // to update sess count
+      queryClient.invalidateQueries({ queryKey: ['conferences'] });
     }
   });
 
@@ -58,8 +38,25 @@ export function useSessions(confId) {
 
   return {
     sessionsQuery,
-    sessionDataQuery,
     createSession,
     deleteSession,
   };
+}
+
+/* ── Fetch a single session's data by ID (separate hook to respect Rules of Hooks) ── */
+export function useSessionData(sessionId) {
+  return useQuery({
+    queryKey: ['sessionData', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return null;
+      const { data: confs } = await api.get('/conferences/');
+      for (const conf of confs) {
+        const { data: sData } = await api.get(`/sessions/${conf.id}`);
+        const sess = sData.find(s => s.id === sessionId);
+        if (sess) return { session: sess, conf };
+      }
+      return null;
+    },
+    enabled: !!sessionId,
+  });
 }

@@ -8,29 +8,29 @@ export function SeatGrid({ sectionId, cfg, attendees, canEdit, onSeatClick }) {
   const getAtt = (r, col) => attendees.find(d => d.section_id === sectionId && d.row_num === r && d.col_num === col);
 
   return (
-    <div style={{ background:'#051008', border:'1px solid #143d22', borderRadius:12, padding:20 }} className="fade-in">
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, flexWrap:'wrap' }}>
-        <div style={{ width:12, height:12, borderRadius:3, background:sec?.color, flexShrink:0 }}/>
-        <h4 style={{ fontFamily:"'Cormorant Garamond',serif", color:'#e2f0e6', fontSize:18 }}>{sec?.label}</h4>
-        <span style={{ color:'#4f6b56', fontSize:12 }}>{c.rows} rows × {c.cols} cols = {c.rows * c.cols} seats</span>
-        <div style={{ marginLeft:'auto', display:'flex', gap:12, flexWrap:'wrap' }}>
+    <div className="seat-grid-wrap fade-in">
+      <div className="seat-grid-header">
+        <div className="seat-grid-legend-dot" style={{ width:12, height:12, borderRadius:3, background:sec?.color }}/>
+        <h4 className="seat-grid-title">{sec?.label}</h4>
+        <span className="seat-grid-info">{c.rows} rows × {c.cols} cols = {c.rows * c.cols} seats</span>
+        <div className="seat-grid-legend">
           {STATUSES.map(s => (
-            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'#8cb398' }}>
-              <div style={{ width:8, height:8, borderRadius:'50%', background:s.color }}/>{s.label}
+            <div key={s.id} className="seat-grid-legend-item">
+              <div className="seat-grid-legend-dot" style={{ background:s.color }}/>{s.label}
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ overflowX:'auto', paddingBottom:4 }}>
-        <div style={{ display:'flex', gap:4, marginBottom:4, paddingLeft:26 }}>
+      <div className="seat-grid-scroll">
+        <div className="seat-grid-cols">
           {Array.from({ length:c.cols }, (_, i) => (
-            <div key={i} style={{ width:30, textAlign:'center', fontSize:9, color:'#2a4430', fontWeight:600 }}>{i+1}</div>
+            <div key={i} className="seat-grid-col-label">{i+1}</div>
           ))}
         </div>
         {Array.from({ length:c.rows }, (_, r) => (
-          <div key={r} style={{ display:'flex', gap:4, marginBottom:4, alignItems:'center' }}>
-            <div style={{ width:22, textAlign:'right', fontSize:9, color:'#2a4430', fontWeight:600, flexShrink:0 }}>{r+1}</div>
+          <div key={r} className="seat-grid-row">
+            <div className="seat-grid-row-label">{r+1}</div>
             {Array.from({ length:c.cols }, (_, col) => {
               const d = getAtt(r+1, col+1);
               return (
@@ -51,7 +51,7 @@ export function SeatGrid({ sectionId, cfg, attendees, canEdit, onSeatClick }) {
           </div>
         ))}
       </div>
-      <p style={{ marginTop:10, fontSize:10, color:'#2a4430', textAlign:'center' }}>
+      <p className="seat-grid-hint">
         {canEdit ? 'Click occupied seat to view profile · Click empty seat to assign an attendee' : 'Click a seat to view profile'}
       </p>
     </div>

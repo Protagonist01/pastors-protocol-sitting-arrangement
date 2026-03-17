@@ -13,6 +13,8 @@ try:
     settings = Settings()
     supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
 except Exception as e:
+    import traceback
+    traceback.print_exc()
     print(f"Warning: Failed to initialize Supabase client. Check .env variables. Details: {e}")
     supabase = None
 

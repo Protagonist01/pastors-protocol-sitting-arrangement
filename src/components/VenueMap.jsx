@@ -2,7 +2,6 @@ import { SECTIONS, DEFAULT_CONFIG } from '../lib/constants';
 
 export function VenueMap({ cfg, attendees, activeSec, onSec }) {
   const getCount = id => attendees.filter(d => d.section_id === id).length;
-  // Convert config array to map for easy lookup
   const cfgMap = (cfg || []).reduce((acc, c) => ({ ...acc, [c.section_id]: c }), {});
   
   const getTotal = id => {
@@ -19,7 +18,7 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
     
     return (
       <div className={`section-block${isAct ? ' active-sec' : ''}${isClosed ? ' closed-sec' : ''}`}
-        style={{ background:sec?.color, color:sec?.textColor, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 8, cursor: isClosed ? 'not-allowed' : 'pointer', transition: 'all 0.2s', border: isAct ? '3px solid #c9a84c' : '1px solid rgba(0,0,0,0.15)', ...ex }}
+        style={{ background:sec?.color, color:sec?.textColor, flexDirection:'column', cursor: isClosed ? 'not-allowed' : 'pointer', border: isAct ? '3px solid #c9a84c' : '1px solid rgba(0,0,0,0.15)', ...ex }}
         onClick={() => !isClosed && onSec(id)}
         title={isClosed ? `${label || sec?.label} (Closed)` : `${label || sec?.label} — ${cnt} of ${tot} assigned`}>
         <div style={{ fontWeight: 800, fontSize: 11, lineHeight: 1.3, textTransform: 'uppercase', whiteSpace: 'pre-line' }}>{label || sec?.label}</div>
@@ -49,31 +48,32 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
   };
 
   return (
-    <div style={{ background:'#051008', border:'1px solid #143d22', padding: '30px 20px', overflowX: 'auto', borderRadius: 12 }}>
-      <div style={{ minWidth: 850, display: 'flex', flexDirection: 'column', gap: 30, position: 'relative', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="venue-map">
+      <div className="venue-scroll-hint">← Swipe to explore the venue map →</div>
+      <div className="venue-map-inner">
         
         {/* TOP ROW */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingLeft: 60 }}>
+        <div className="venue-top-row">
           <Block id="choir_top" label="CHOIR" style={{ width: 110, height: 110, borderRadius: 2 }} hideStats />
           
-          <div style={{ flex: 1, margin: '0 30px', display: 'flex', flexDirection: 'column' }}>
+          <div className="venue-altar-wrapper">
             <Block id="altar" label="ALTAR" style={{ height: 110, borderRadius: 2 }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 40px', color: '#e2f0e6', fontWeight: 'bold', fontSize: 12 }}>
+            <div className="venue-altar-arrows">
               <span>←--------------</span>
               <span>--------------→</span>
             </div>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div className="venue-vvip-wrapper">
             <Block id="vvip" label={"SETMAN\n-\nVVIP / CEC\nSECTION"} style={{ width: 160, height: 110, borderRadius: 16 }} />
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 10, fontWeight: 900, fontSize: 13, color: '#e2f0e6', lineHeight: 1.1 }}>
+            <div className="venue-vvip-closed">
               <span>C</span><span>L</span><span>O</span><span>S</span><span>E</span><span>D</span>
             </div>
           </div>
         </div>
 
         {/* MIDDLE ROW */}
-        <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+        <div className="venue-mid-row">
           
           <Arrow dir="down" label="PP" style={{ width: 40, marginRight: 20 }} />
           
@@ -91,25 +91,25 @@ export function VenueMap({ cfg, attendees, activeSec, onSec }) {
           
           <Block id="right" label="RIGHT SECTION" style={{ width: 105, height: 110, borderRadius: 16 }} />
           
-          <div style={{ fontSize: 10, fontWeight: 900, color: '#e2f0e6', margin: '0 8px' }}>CLOSED</div>
+          <div className="venue-closed-label">CLOSED</div>
           
           <Block id="minister" label={"MINISTER\nSECTION"} style={{ flex: 1, minWidth: 140, height: 140, borderRadius: 2 }} />
         </div>
 
         {/* BOTTOM ROW */}
-        <div style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: 20, paddingTop: 60 }}>
-          <div style={{ width: 120, height: 120, background: '#fff', color: '#000', border: '1px solid #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 11 }}>ENTRANCE</div>
+        <div className="venue-bot-row">
+          <div className="venue-entrance">ENTRANCE</div>
           
-          <div style={{ flex: 1.8, background: '#900C3F', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 12, borderRadius: 2 }}>MEDIA</div>
+          <div className="venue-media-bar">MEDIA</div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 60, color: '#e2f0e6' }}>
+          <div className="venue-entrance-arrow">
             <span style={{ fontSize: 20, lineHeight: 1 }}>↑</span>
             <span style={{ fontSize: 10, fontWeight: 'bold', marginTop: 4 }}>ENTRANCE</span>
           </div>
 
-          <div style={{ flex: 1.2, background: '#7D5A85', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 11, textAlign: 'center', padding: 10, borderRadius: 2 }}>ADMIN STAND FOR PUBLICATIONS</div>
+          <div className="venue-admin-bar">ADMIN STAND FOR PUBLICATIONS</div>
           
-          <div style={{ width: 120, height: 120, background: '#fff', color: '#000', border: '1px solid #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 11 }}>ENTRANCE</div>
+          <div className="venue-entrance">ENTRANCE</div>
         </div>
 
       </div>

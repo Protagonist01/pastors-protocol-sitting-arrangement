@@ -23,7 +23,7 @@ export function useAttendees(sessionId) {
     
     // Subscribe to changes on the specific session
     const channel = supabase.channel(`public:attendees:session_id=eq.${sessionId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendees', filter: `session_id=eq.${sessionId}` }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendees', filter: `session_id=eq.${sessionId}` }, () => {
         // Invalidate the query to fetch fresh data whenever an attendee changes in this session
         queryClient.invalidateQueries({ queryKey: ['attendees', sessionId] });
       })
