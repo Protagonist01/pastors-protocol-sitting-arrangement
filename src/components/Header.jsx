@@ -54,7 +54,7 @@ export function Header({ confName, sessionName }) {
           </>}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
+        <div className="header-actions">
           <div className="header-user-info">
             <div className="header-user-name">{profile?.full_name || user?.email || 'Loading...'}</div>
             <RoleTag role={profile?.role}/>
