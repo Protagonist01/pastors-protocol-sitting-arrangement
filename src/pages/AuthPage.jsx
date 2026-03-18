@@ -70,7 +70,7 @@ export function AuthPage() {
 
           {mode==='register' && (
             <FormField label="Full Name">
-              <input className="input" placeholder="Pastor John Mensah" value={name} onChange={e=>setName(e.target.value)}/>
+              <input className="input" placeholder="John Mensah" value={name} onChange={e=>setName(e.target.value)}/>
             </FormField>
           )}
           <FormField label="Email">

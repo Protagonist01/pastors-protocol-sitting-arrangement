@@ -47,7 +47,7 @@ def update_dignitary(dignitary_id: str, dignitary: DignitaryUpdate, supabase: Cl
     return res.data[0]
 
 @direct_router.patch("/{dignitary_id}/status", response_model=Dict[str, Any])
-def update_dignitary_status(dignitary_id: str, status_update: DignitaryStatusUpdate, supabase: Client = Depends(get_supabase), user = Depends(require_editor_or_admin)):
+def update_dignitary_status(dignitary_id: str, status_update: DignitaryStatusUpdate, supabase: Client = Depends(get_supabase), user = Depends(get_current_user)):
     res = supabase.table("dignitaries").update({
         "status": status_update.status,
         "updated_at": "now()"

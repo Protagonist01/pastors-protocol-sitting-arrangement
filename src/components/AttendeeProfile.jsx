@@ -46,31 +46,26 @@ export function AttendeeProfile({ atn, canEdit, onEdit, onStatus, onClose }) {
         </div>
       )}
 
-      {canEdit && <>
-        <div className="status-section">
-          <div className="status-section-label">Update Arrival Status</div>
-          <div className="status-buttons">
-            {STATUSES.map(s => (
-              <button key={s.id} onClick={() => onStatus(s.id)}
-                className={`status-btn ${atn.status===s.id ? 'active' : ''}`}
-                style={{
-                  borderColor: `${s.color}${atn.status===s.id?'':44}`,
-                  background: atn.status===s.id ? `${s.color}22` : 'transparent',
-                  color: s.color
-                }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
+      <div className="status-section">
+        <div className="status-section-label">Update Arrival Status</div>
+        <div className="status-buttons">
+          {STATUSES.map(s => (
+            <button key={s.id} onClick={() => onStatus(s.id)}
+              className={`status-btn ${atn.status===s.id ? 'active' : ''}`}
+              style={{
+                borderColor: `${s.color}${atn.status===s.id?'':44}`,
+                background: atn.status===s.id ? `${s.color}22` : 'transparent',
+                color: s.color
+              }}>
+              {s.label}
+            </button>
+          ))}
         </div>
-        <div className="profile-modal-actions">
-          <button className="btn btn-outline btn-sm" onClick={onClose}>Close</button>
-          <button className="btn btn-gold btn-sm" onClick={onEdit}>✏ Edit Profile</button>
-        </div>
-      </>}
-      {!canEdit && <div className="profile-modal-actions">
+      </div>
+      <div className="profile-modal-actions">
         <button className="btn btn-outline btn-sm" onClick={onClose}>Close</button>
-      </div>}
+        {canEdit && <button className="btn btn-gold btn-sm" onClick={onEdit}>✏ Edit Profile</button>}
+      </div>
     </div>
   </>;
 }

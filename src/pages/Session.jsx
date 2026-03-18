@@ -221,26 +221,26 @@ function DignitaryList({ attendees, canEdit, onView, onEdit, onDelete, onStatus 
                   </div>
                 </div>
 
-                <div className="attendee-badges" style={{ marginBottom: canEdit ? 28 : 0 }}>
+                <div className="attendee-badges" style={{ marginBottom: 28 }}>
                   <span className={`badge ${d.status}`}>{STATUSES.find(s=>s.id===d.status)?.label}</span>
                   {sec && <span className="section-tag" style={{ color:sec.color, background:`${sec.color}11`,
                     borderColor:`${sec.color}33` }}>{sec.label}</span>}
                   {d.row_num && d.col_num && <span className="seat-ref">R{d.row_num}·S{d.col_num}</span>}
                 </div>
 
-                {canEdit && (
-                  <div className="attendee-card-actions"
-                    onClick={e => e.stopPropagation()}>
-                    <select value={d.status} onChange={e => onStatus(d.id, e.target.value)}
-                      className="inline-status-select"
-                      style={{ color:statusColor[d.status] }}>
-                      {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                    </select>
+                <div className="attendee-card-actions"
+                  onClick={e => e.stopPropagation()}>
+                  <select value={d.status} onChange={e => onStatus(d.id, e.target.value)}
+                    className="inline-status-select"
+                    style={{ color:statusColor[d.status] }}>
+                    {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                  </select>
+                  {canEdit && <>
                     <button className="btn btn-ghost btn-sm" style={{ padding:'3px 7px', fontSize:13 }} onClick={() => onEdit(d)}>✏</button>
                     <button className="btn btn-ghost btn-sm" style={{ padding:'3px 7px', fontSize:13, color:'#ef4444' }}
                       onClick={() => { if (window.confirm('Remove this dignitary?')) onDelete(d.id); }}>🗑</button>
-                  </div>
-                )}
+                  </>}
+                </div>
               </div>
             );
           })}
