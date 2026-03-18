@@ -54,26 +54,25 @@ export function Header({ confName, sessionName }) {
           </>}
         </div>
 
-        <div className="header-user">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
           <div className="header-user-info">
             <div className="header-user-name">{profile?.full_name || user?.email || 'Loading...'}</div>
             <RoleTag role={profile?.role}/>
           </div>
           <div className="header-avatar"
-            style={{ background: `${roleColor}22`, border: `2px solid ${roleColor}55` }}>
+            style={{ background: `${roleColor}22`, border: `2px solid ${roleColor}55`, flexShrink: 0 }}>
             {(profile?.full_name || user?.email)?.[0]?.toUpperCase()}
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={handleRefreshProfile} title="Refresh profile" style={{ fontSize: 16 }}>
+          <button className="btn btn-ghost btn-icon" onClick={handleRefreshProfile} title="Refresh profile" style={{ fontSize: 18 }}>
             ↻
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={handleLogout} title="Sign out" style={{ fontSize: 16 }}>
-            <LogOut size={16} />
+          <button className="btn btn-ghost btn-icon" onClick={handleLogout} title="Sign out">
+            <LogOut size={18} color="#ef4444" />
+          </button>
+          <button className="header-mobile-toggle" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
+            <Menu size={20} />
           </button>
         </div>
-
-        <button className="header-mobile-toggle" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
-          <Menu size={20} />
-        </button>
       </header>
 
       {/* Mobile drawer overlay */}

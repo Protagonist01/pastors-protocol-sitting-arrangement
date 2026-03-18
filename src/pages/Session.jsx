@@ -392,29 +392,31 @@ function SectionConfigModal({ sessionId, currentConfig, onClose, onSaved }) {
     <div className="modal-body">
       {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13, padding: 8, background: '#ef444422', borderRadius: 6 }}>{error}</p>}
       
-      <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:12, marginBottom:16 }}>
         {OPEN_SECTIONS.map(sec => {
           const c = cfg[sec.id];
           return (
             <div key={sec.id} style={{
-              display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
-              background:'#051008', borderRadius:8, border:`1px solid ${sec.color}33`
+              display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'16px',
+              background:'#051008', borderRadius:'12px', border:`1px solid ${sec.color}44`
             }}>
-              <div style={{ width:10, height:10, borderRadius:3, background:sec.color, flexShrink:0 }}/>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:'#e2f0e6' }}>{sec.label}</div>
-                <div style={{ fontSize:11, color:'#4f6b56' }}>{c.rows * c.cols} seats</div>
+              <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:16 }}>
+                <div style={{ width:12, height:12, borderRadius:3, background:sec.color, flexShrink:0, marginTop:4 }}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:15, fontWeight:700, color:'#e2f0e6', lineHeight:1.2, marginBottom:2 }}>{sec.label}</div>
+                  <div style={{ fontSize:12, color:'#8cb398' }}>{c.rows * c.cols} seats</div>
+                </div>
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <div style={{ textAlign:'center' }}>
-                  <div style={{ fontSize:9, color:'#4f6b56', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>Rows</div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#0a1a10', padding:'10px 12px', borderRadius:'8px', border:'1px solid #143d22' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ fontSize:10, color:'#4f6b56', textTransform:'uppercase', letterSpacing:'.5px' }}>Rows</div>
                   <input className="input" type="number" min="1" max="20" value={c.rows}
                     onChange={e => update(sec.id, 'rows', e.target.value)}
                     style={{ width:56, textAlign:'center', padding:'6px 4px', fontSize:14 }}/>
                 </div>
-                <span style={{ color:'#143d22', fontSize:14, marginTop:14 }}>×</span>
-                <div style={{ textAlign:'center' }}>
-                  <div style={{ fontSize:9, color:'#4f6b56', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>Cols</div>
+                <div style={{ fontSize:14, color:'#4f6b56', fontWeight: 300 }}>×</div>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ fontSize:10, color:'#4f6b56', textTransform:'uppercase', letterSpacing:'.5px' }}>Cols</div>
                   <input className="input" type="number" min="1" max="20" value={c.cols}
                     onChange={e => update(sec.id, 'cols', e.target.value)}
                     style={{ width:56, textAlign:'center', padding:'6px 4px', fontSize:14 }}/>

@@ -36,6 +36,7 @@ select.input option { background: #0a1a10; }
 .btn-ghost { background: transparent; color: #8cb398; padding: 6px 10px; }
 .btn-ghost:hover { color: #c9a84c; }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-icon { width: 34px; height: 34px; padding: 0 !important; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; }
 .btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
 /* ── Badges ── */
@@ -86,7 +87,7 @@ select.input option { background: #0a1a10; }
 .header-user-info { text-align: right; }
 .header-user-name { font-size: 13px; color: #e2f0e6; font-weight: 500; line-height: 1.3; }
 .header-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #e2f0e6; flex-shrink: 0; }
-.header-mobile-toggle { display: none; background: transparent; border: 1px solid #143d22; border-radius: 6px; color: #8cb398; padding: 5px 8px; cursor: pointer; font-size: 18px; line-height: 1; }
+.header-mobile-toggle { display: none; background: transparent; border: 1px solid #143d22; border-radius: 8px; color: #8cb398; width: 34px; height: 34px; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0; }
 .header-mobile-drawer { display: none; }
 
 /* ── Grid & Cards ── */
@@ -259,8 +260,8 @@ select.input option { background: #0a1a10; }
   .header-breadcrumbs { display: none; }
   .header-logo-title { font-size: 13px; }
   .header-user-info { display: none; }
-  .header-avatar { width: 30px; height: 30px; font-size: 13px; }
-  .header-mobile-toggle { display: block; }
+  .header-avatar { width: 34px; height: 34px; font-size: 15px; } /* Must perfectly match the btn-icons on mobile */
+  .header-mobile-toggle { display: inline-flex; }
   .header-mobile-drawer {
     position: fixed; top: 0; right: 0; bottom: 0; width: 280px;
     background: #0a1a10; border-left: 1px solid #143d22; z-index: 200;
