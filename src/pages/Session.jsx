@@ -6,7 +6,7 @@ import { Header } from '../components/Header';
 import { VenueMap } from '../components/VenueMap';
 import { SeatGrid } from '../components/SeatGrid';
 import { AttendeeProfile } from '../components/AttendeeProfile';
-import { SECTIONS, OPEN_SECTIONS, STATUSES, statusColor } from '../lib/constants';
+import { SECTIONS, OPEN_SECTIONS, STATUSES, statusColor, DEFAULT_CONFIG } from '../lib/constants';
 import { format } from 'date-fns';
 import { useSessionData } from '../hooks/useSessions';
 import { useDignitaries } from '../hooks/useAttendees';
@@ -14,6 +14,7 @@ import { useConferences } from '../hooks/useConferences';
 import { useSessions } from '../hooks/useSessions';
 import { api } from '../services/apiClient';
 import { supabase } from '../lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 
 function DignitaryForm({ init = {}, isEdit, sessionId, onSave, onCancel }) {
   const [f, setF] = useState({ name:'', title:'', church:'', extension:'', section:'', row_num:'', col_num:'', status:'pending', notes:'', ...init });
@@ -345,6 +346,98 @@ function ImportArrangementModal({ targetSessionId, onClose, onSuccess }) {
   </>;
 }
 
+function SectionConfigModal({ sessionId, currentConfig, onClose, onSaved }) {
+  const [cfg, setCfg] = useState(() => {
+    const merged = {};
+    OPEN_SECTIONS.forEach(sec => {
+      const cur = currentConfig?.[sec.id] || DEFAULT_CONFIG[sec.id] || { rows: 5, cols: 5 };
+      merged[sec.id] = { rows: cur.rows, cols: cur.cols };
+    });
+    return merged;
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const update = (secId, field, val) => {
+    const num = Math.max(1, Math.min(20, parseInt(val) || 1));
+    setCfg(prev => ({ ...prev, [secId]: { ...prev[secId], [field]: num } }));
+  };
+
+  const resetDefaults = () => {
+    const defaults = {};
+    OPEN_SECTIONS.forEach(sec => {
+      defaults[sec.id] = { ...DEFAULT_CONFIG[sec.id] || { rows: 5, cols: 5 } };
+    });
+    setCfg(defaults);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await api.patch(`/sessions/${sessionId}/seating-config`, cfg);
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.detail || err?.message || 'Failed to save config');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const totalSeats = Object.values(cfg).reduce((sum, c) => sum + c.rows * c.cols, 0);
+
+  return <>
+    <ModalHeader title="Configure Sections" sub="Set rows & columns for each seating section" onClose={onClose}/>
+    <div className="modal-body">
+      {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13, padding: 8, background: '#ef444422', borderRadius: 6 }}>{error}</p>}
+      
+      <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+        {OPEN_SECTIONS.map(sec => {
+          const c = cfg[sec.id];
+          return (
+            <div key={sec.id} style={{
+              display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+              background:'#051008', borderRadius:8, border:`1px solid ${sec.color}33`
+            }}>
+              <div style={{ width:10, height:10, borderRadius:3, background:sec.color, flexShrink:0 }}/>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:600, color:'#e2f0e6' }}>{sec.label}</div>
+                <div style={{ fontSize:11, color:'#4f6b56' }}>{c.rows * c.cols} seats</div>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ textAlign:'center' }}>
+                  <div style={{ fontSize:9, color:'#4f6b56', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>Rows</div>
+                  <input className="input" type="number" min="1" max="20" value={c.rows}
+                    onChange={e => update(sec.id, 'rows', e.target.value)}
+                    style={{ width:56, textAlign:'center', padding:'6px 4px', fontSize:14 }}/>
+                </div>
+                <span style={{ color:'#143d22', fontSize:14, marginTop:14 }}>×</span>
+                <div style={{ textAlign:'center' }}>
+                  <div style={{ fontSize:9, color:'#4f6b56', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>Cols</div>
+                  <input className="input" type="number" min="1" max="20" value={c.cols}
+                    onChange={e => update(sec.id, 'cols', e.target.value)}
+                    style={{ width:56, textAlign:'center', padding:'6px 4px', fontSize:14 }}/>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <span style={{ fontSize:12, color:'#4f6b56' }}>Total capacity: <strong style={{ color:'#c9a84c' }}>{totalSeats}</strong> seats</span>
+        <button className="btn btn-ghost btn-sm" onClick={resetDefaults} style={{ fontSize:11 }}>↩ Reset Defaults</button>
+      </div>
+
+      <div className="form-actions">
+        <button className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
+        <button className="btn btn-gold" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Configuration'}</button>
+      </div>
+    </div>
+  </>;
+}
+
 export function Session() {
   const { sessionId } = useParams();
   const { isEditorOrAdmin } = useAuth();
@@ -354,10 +447,12 @@ export function Session() {
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const [editingAtn, setEditingAtn] = useState(null);
   const [viewingAtn, setViewingAtn] = useState(null);
   const [prefillLoc, setPrefillLoc] = useState(null);
 
+  const queryClient = useQueryClient();
   const { data: sessionInfo, isLoading: loadingInfo } = useSessionData(sessionId);
 
   const { dignitariesQuery, createDignitary, updateDignitary, updateDignitaryStatus, deleteDignitary } = useDignitaries(sessionId);
@@ -390,6 +485,7 @@ export function Session() {
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
             {isEditorOrAdmin && <button className="btn btn-gold btn-sm" onClick={() => setShowAddModal(true)}>+ Register Dignitary</button>}
             {isEditorOrAdmin && <button className="btn btn-outline btn-sm" onClick={() => setShowImportModal(true)}>📋 Import Arrangement</button>}
+            {isEditorOrAdmin && <button className="btn btn-outline btn-sm" onClick={() => setShowConfigModal(true)}>⚙ Configure Sections</button>}
           </div>
         </div>
 
@@ -485,6 +581,17 @@ export function Session() {
             targetSessionId={sessionId}
             onClose={() => setShowImportModal(false)}
             onSuccess={() => dignitariesQuery.refetch()}
+          />
+        </Modal>
+      )}
+
+      {showConfigModal && (
+        <Modal onClose={() => setShowConfigModal(false)}>
+          <SectionConfigModal
+            sessionId={sessionId}
+            currentConfig={session.seating_config}
+            onClose={() => setShowConfigModal(false)}
+            onSaved={() => queryClient.invalidateQueries({ queryKey: ['sessionData', sessionId] })}
           />
         </Modal>
       )}
