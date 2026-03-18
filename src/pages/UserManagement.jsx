@@ -16,7 +16,7 @@ export function UserManagement() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data } = await api.get('/users');
+      const { data } = await api.get('/users/');
       return data;
     },
     enabled: currentUser?.role === 'admin',

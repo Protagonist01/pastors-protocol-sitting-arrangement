@@ -17,7 +17,11 @@ function ConfForm({ isEdit, onSave, onCancel }) {
     setSaving(true);
     setError('');
     try {
-      await onSave(f);
+      // Convert empty strings to null so Pydantic doesn't reject them
+      const cleaned = Object.fromEntries(
+        Object.entries(f).map(([k, v]) => [k, v === '' ? null : v])
+      );
+      await onSave(cleaned);
     } catch (err) {
       const detail = err?.response?.data?.detail;
       const msg = typeof detail === 'string' ? detail

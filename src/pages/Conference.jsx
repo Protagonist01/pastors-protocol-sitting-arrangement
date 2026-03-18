@@ -7,13 +7,36 @@ import { format } from 'date-fns';
 import { useConference } from '../hooks/useConferences';
 import { useSessions } from '../hooks/useSessions';
 
-function SessionForm({ isEdit, confId, onSave, onCancel }) {
+function SessionForm({ isEdit, onSave, onCancel }) {
   const [f, setF] = useState({ name:'', date:'', time:'', description:'' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const s = (k, v) => setF(x => ({ ...x, [k]:v }));
+
+  const handleSave = async () => {
+    if (!f.name) return;
+    setSaving(true);
+    setError('');
+    try {
+      const cleaned = Object.fromEntries(
+        Object.entries(f).map(([k, v]) => [k, v === '' ? null : v])
+      );
+      await onSave(cleaned);
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : Array.isArray(detail) ? detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+        : err?.message || 'Failed to create session';
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
   
   return <>
     <ModalHeader title={isEdit ? 'Edit Session' : 'New Session'} onClose={onCancel}/>
     <div className="modal-body">
+      {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13, padding: 8, background: '#ef444422', borderRadius: 6 }}>{error}</p>}
       <FormField label="Session Name *"><input className="input" placeholder="Opening Night" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
       <div className="form-grid-2">
         <FormField label="Date"><input className="input" type="date" value={f.date} onChange={e=>s('date',e.target.value)}/></FormField>
@@ -21,8 +44,8 @@ function SessionForm({ isEdit, confId, onSave, onCancel }) {
       </div>
       <FormField label="Description"><textarea className="input" rows={3} placeholder="Brief overview…" value={f.description} onChange={e=>s('description',e.target.value)} style={{ resize:'vertical' }}/></FormField>
       <div className="form-actions">
-        <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
-        <button className="btn btn-gold" onClick={() => f.name && onSave({ ...f, conference_id: confId })} disabled={!f.name}>{isEdit ? 'Save Changes' : 'Add Session'}</button>
+        <button className="btn btn-outline" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn btn-gold" onClick={handleSave} disabled={!f.name || saving}>{saving ? 'Creating...' : (isEdit ? 'Save Changes' : 'Add Session')}</button>
       </div>
     </div>
   </>;
@@ -100,8 +123,18 @@ export function Conference() {
 
       {showNew && (
         <Modal onClose={() => setShowNew(false)}>
-          <SessionForm confId={confId} isEdit={false} onSave={(f) => {
-             createSession.mutate(f, { onSuccess: () => setShowNew(false) })
+          <SessionForm isEdit={false} onSave={async (f) => {
+            try {
+              await createSession.mutateAsync(f);
+              setShowNew(false);
+            } catch (err) {
+              const detail = err?.response?.data?.detail;
+              const msg = typeof detail === 'string' ? detail
+                : Array.isArray(detail) ? detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+                : typeof err?.message === 'string' ? err.message
+                : 'Failed to create session';
+              throw new Error(msg);
+            }
           }} onCancel={() => setShowNew(false)} />
         </Modal>
       )}

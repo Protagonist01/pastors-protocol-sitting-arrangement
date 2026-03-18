@@ -16,11 +16,34 @@ import { api } from '../services/apiClient';
 
 function DignitaryForm({ init = {}, isEdit, sessionId, onSave, onCancel }) {
   const [f, setF] = useState({ name:'', title:'', church:'', extension:'', section:'', row_num:'', col_num:'', status:'pending', notes:'', ...init });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const s = (k, v) => setF(x => ({ ...x, [k]:v }));
+
+  const handleSave = async () => {
+    if (!f.name || !f.title) return;
+    setSaving(true);
+    setError('');
+    try {
+      const cleaned = Object.fromEntries(
+        Object.entries(f).map(([k, v]) => [k, v === '' ? null : v])
+      );
+      await onSave({ ...cleaned, session_id: sessionId });
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : Array.isArray(detail) ? detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+        : err?.message || (isEdit ? 'Failed to update dignitary' : 'Failed to register dignitary');
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return <>
     <ModalHeader title={isEdit ? 'Edit Dignitary' : 'Register Dignitary'} onClose={onCancel}/>
     <div className="modal-body">
+      {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13, padding: 8, background: '#ef444422', borderRadius: 6 }}>{error}</p>}
       <div className="form-row">
         <div style={{ flex:1 }}>
           <FormField label="Name *"><input className="input" placeholder="John Mensah" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
@@ -58,8 +81,8 @@ function DignitaryForm({ init = {}, isEdit, sessionId, onSave, onCancel }) {
       <FormField label="Protocol Notes"><textarea className="input" rows={2} placeholder="Any special requirements..." value={f.notes} onChange={e=>s('notes',e.target.value)} style={{ resize:'vertical' }}/></FormField>
       
       <div className="form-actions">
-        <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
-        <button className="btn btn-gold" onClick={() => f.name && f.title && onSave({ ...f, session_id: sessionId })} disabled={!f.name || !f.title}>{isEdit ? 'Save Changes' : 'Register Dignitary'}</button>
+        <button className="btn btn-outline" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn btn-gold" onClick={handleSave} disabled={!f.name || !f.title || saving}>{saving ? 'Saving...' : (isEdit ? 'Save Changes' : 'Register Dignitary')}</button>
       </div>
     </div>
   </>;
@@ -340,8 +363,9 @@ export function Session() {
             sessionId={sessionId} 
             init={prefillLoc || {}} 
             isEdit={false} 
-            onSave={(data) => {
-              createDignitary.mutate(data, { onSuccess: () => { setShowAddModal(false); setPrefillLoc(null); } })
+            onSave={async (data) => {
+              await createDignitary.mutateAsync(data);
+              setShowAddModal(false); setPrefillLoc(null);
             }} 
             onCancel={() => { setShowAddModal(false); setPrefillLoc(null); }} />
         </Modal>
@@ -353,8 +377,9 @@ export function Session() {
             sessionId={sessionId} 
             init={editingAtn} 
             isEdit={true} 
-            onSave={(data) => {
-              updateDignitary.mutate({ id: editingAtn.id, data }, { onSuccess: () => { setEditingAtn(null); if (viewingAtn) setViewingAtn(null); } })
+            onSave={async (data) => {
+              await updateDignitary.mutateAsync({ id: editingAtn.id, data });
+              setEditingAtn(null); if (viewingAtn) setViewingAtn(null);
             }} 
             onCancel={() => setEditingAtn(null)} />
         </Modal>
