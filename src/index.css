@@ -368,4 +368,19 @@ select.input option { background: #0a1a10; }
   .profile-avatar { width: 60px; height: 60px; font-size: 24px; }
   .profile-name { font-size: 20px; }
   .profile-title-text { font-size: 13px; }
+
+  /* Photo upload area in DignitaryForm — stack vertically on small phones */
+  .modal-body > div:first-child {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .modal-body > div:first-child > div:first-child {
+    align-self: center;
+  }
+  .modal-body > div:first-child .form-row {
+    flex-direction: column;
+  }
+  .modal-body > div:first-child .form-col-narrow {
+    width: 100%;
+  }
 }
