@@ -77,7 +77,7 @@ export function Dashboard() {
 
         {confList.length === 0 ? (
           <div className="empty-state">
-            <div style={{ marginBottom:16, opacity:.4 }}><img src="/logo.png" style={{ height: 60 }} alt="" /></div>
+            <div className="empty-state-icon">📋</div>
             <p className="empty-state-text">No conferences yet</p>
             {isEditorOrAdmin && <p className="empty-state-sub">Create your first conference to get started</p>}
           </div>

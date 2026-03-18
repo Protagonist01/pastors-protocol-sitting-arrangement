@@ -10,6 +10,7 @@ export function AuthPage() {
   const [pass, setPass] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const [err, setErr] = useState('');
 
   const submit = async () => {
@@ -78,8 +79,24 @@ export function AuthPage() {
               onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()}/>
           </FormField>
           <FormField label="Password">
-            <input className="input" type="password" placeholder="••••••••" value={pass}
-              onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()}/>
+            <div style={{ position:'relative' }}>
+              <input className="input" type={showPass ? 'text' : 'password'} placeholder="••••••••" value={pass}
+                onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()}
+                style={{ paddingRight: 42 }}/>
+              <button type="button" onClick={() => setShowPass(v => !v)}
+                style={{
+                  position:'absolute', right:8, top:'50%', transform:'translateY(-50%)',
+                  background:'transparent', border:'none', cursor:'pointer',
+                  color:'#4f6b56', fontSize:16, padding:'4px 6px', lineHeight:1,
+                  transition:'color .15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#c9a84c'}
+                onMouseLeave={e => e.currentTarget.style.color = '#4f6b56'}
+                tabIndex={-1}
+                aria-label={showPass ? 'Hide password' : 'Show password'}>
+                {showPass ? '🙈' : '👁'}
+              </button>
+            </div>
           </FormField>
 
           {err && <p className="auth-error" style={{ color: err.includes('successful') ? '#22c55e' : '#ef4444' }}>{err}</p>}
