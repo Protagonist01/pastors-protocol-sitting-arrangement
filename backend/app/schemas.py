@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional, Literal
-from datetime import date, time
 
 
 # ── User / Profile schemas ──
@@ -13,13 +12,13 @@ class RoleUpdate(BaseModel):
 
 class ConferenceCreate(BaseModel):
     name: str
-    date: Optional[date] = None
+    date: Optional[str] = None
     venue: Optional[str] = None
     description: Optional[str] = None
 
 class ConferenceUpdate(BaseModel):
     name: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[str] = None
     venue: Optional[str] = None
     description: Optional[str] = None
 
@@ -28,16 +27,16 @@ class ConferenceUpdate(BaseModel):
 
 class SessionCreate(BaseModel):
     name: str
-    date: Optional[date] = None
-    time: Optional[time] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
     description: Optional[str] = None
     seating_config: Optional[dict] = {}
     # conference_id comes from the URL path, not the body
 
 class SessionUpdate(BaseModel):
     name: Optional[str] = None
-    date: Optional[date] = None
-    time: Optional[time] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
     description: Optional[str] = None
     seating_config: Optional[dict] = None
 

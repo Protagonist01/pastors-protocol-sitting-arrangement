@@ -25,10 +25,7 @@ def create_session(conf_id: str, session: SessionCreate, supabase: Client = Depe
     data = session.model_dump(exclude_unset=True)
     data["conference_id"] = conf_id
     data["created_by"] = user.id
-    if 'date' in data and data['date']:
-        data['date'] = data['date'].isoformat()
-    if 'time' in data and data['time']:
-        data['time'] = data['time'].isoformat()
+
     if 'seating_config' not in data or not data['seating_config']:
         data['seating_config'] = {}
         
@@ -48,10 +45,7 @@ def get_session(session_id: str, supabase: Client = Depends(get_supabase), user 
 def update_session(session_id: str, session: SessionUpdate, supabase: Client = Depends(get_supabase), user = Depends(require_editor_or_admin)):
     data = session.model_dump(exclude_unset=True)
     data["updated_at"] = "now()"
-    if 'date' in data and data['date']:
-        data['date'] = data['date'].isoformat()
-    if 'time' in data and data['time']:
-        data['time'] = data['time'].isoformat()
+
         
     res = supabase.table("sessions").update(data).eq("id", session_id).execute()
     if not res.data:
