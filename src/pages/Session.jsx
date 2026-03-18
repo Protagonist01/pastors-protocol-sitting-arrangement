@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../components/auth-context';
 import { Loader, Modal, ModalHeader, FormField } from '../components/UI';
@@ -13,21 +13,67 @@ import { useDignitaries } from '../hooks/useAttendees';
 import { useConferences } from '../hooks/useConferences';
 import { useSessions } from '../hooks/useSessions';
 import { api } from '../services/apiClient';
+import { supabase } from '../lib/supabase';
 
 function DignitaryForm({ init = {}, isEdit, sessionId, onSave, onCancel }) {
   const [f, setF] = useState({ name:'', title:'', church:'', extension:'', section:'', row_num:'', col_num:'', status:'pending', notes:'', ...init });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(init.picture_url || null);
+  const fileRef = useRef(null);
   const s = (k, v) => setF(x => ({ ...x, [k]:v }));
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be smaller than 5MB');
+      return;
+    }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setError('');
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const uploadPhoto = async () => {
+    if (!photoFile) return f.picture_url || null;
+    const ext = photoFile.name.split('.').pop() || 'jpg';
+    const path = `${sessionId}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from('dignitary-photos')
+      .upload(path, photoFile, { cacheControl: '3600', upsert: false });
+    if (uploadErr) throw new Error(`Photo upload failed: ${uploadErr.message}`);
+    const { data: { publicUrl } } = supabase.storage
+      .from('dignitary-photos')
+      .getPublicUrl(path);
+    return publicUrl;
+  };
 
   const handleSave = async () => {
     if (!f.name || !f.title) return;
     setSaving(true);
     setError('');
     try {
+      // Upload photo first if a new file was selected
+      const pictureUrl = await uploadPhoto();
       const cleaned = Object.fromEntries(
         Object.entries(f).map(([k, v]) => [k, v === '' ? null : v])
       );
+      // If photo was removed (preview is null and no file), send null
+      if (!photoPreview && !photoFile) cleaned.picture_url = null;
+      else if (pictureUrl) cleaned.picture_url = pictureUrl;
       await onSave({ ...cleaned, session_id: sessionId });
     } catch (err) {
       const detail = err?.response?.data?.detail;
@@ -44,12 +90,46 @@ function DignitaryForm({ init = {}, isEdit, sessionId, onSave, onCancel }) {
     <ModalHeader title={isEdit ? 'Edit Dignitary' : 'Register Dignitary'} onClose={onCancel}/>
     <div className="modal-body">
       {error && <p style={{ color: '#ef4444', marginBottom: 12, fontSize: 13, padding: 8, background: '#ef444422', borderRadius: 6 }}>{error}</p>}
-      <div className="form-row">
-        <div style={{ flex:1 }}>
-          <FormField label="Name *"><input className="input" placeholder="John Mensah" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
+      
+      {/* Photo Upload */}
+      <div style={{ display:'flex', gap:16, marginBottom:16, alignItems:'flex-start' }}>
+        <div style={{ flexShrink:0 }}>
+          <div
+            onClick={() => fileRef.current?.click()}
+            style={{
+              width:80, height:80, borderRadius:12, cursor:'pointer',
+              border: photoPreview ? 'none' : '2px dashed #143d22',
+              background: photoPreview ? 'transparent' : '#0a1a10',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              overflow:'hidden', position:'relative',
+              transition: 'border-color 0.2s',
+            }}
+            onMouseEnter={e => { if (!photoPreview) e.currentTarget.style.borderColor = '#c9a84c'; }}
+            onMouseLeave={e => { if (!photoPreview) e.currentTarget.style.borderColor = '#143d22'; }}
+          >
+            {photoPreview ? (
+              <img src={photoPreview} alt="Preview" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:12 }} />
+            ) : (
+              <span style={{ fontSize:28, opacity:0.4 }}>📷</span>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display:'none' }} />
+          {photoPreview && (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={removePhoto}
+              style={{ fontSize:11, color:'#ef4444', padding:'2px 0', marginTop:4, width:'100%', textAlign:'center' }}>
+              Remove
+            </button>
+          )}
         </div>
-        <div className="form-col-narrow">
-          <FormField label="Title *"><input className="input" placeholder="e.g. Presiding Bishop, H.E., Pastor" value={f.title} onChange={e=>s('title',e.target.value)}/></FormField>
+        <div style={{ flex:1 }}>
+          <div className="form-row" style={{ margin:0 }}>
+            <div style={{ flex:1 }}>
+              <FormField label="Name *"><input className="input" placeholder="John Mensah" value={f.name} onChange={e=>s('name',e.target.value)}/></FormField>
+            </div>
+            <div className="form-col-narrow">
+              <FormField label="Title *"><input className="input" placeholder="e.g. Presiding Bishop, H.E., Pastor" value={f.title} onChange={e=>s('title',e.target.value)}/></FormField>
+            </div>
+          </div>
         </div>
       </div>
       

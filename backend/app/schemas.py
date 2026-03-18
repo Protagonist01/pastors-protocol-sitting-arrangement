@@ -52,6 +52,7 @@ class DignitaryCreate(BaseModel):
     row_num: Optional[int] = None
     col_num: Optional[int] = None
     notes: Optional[str] = None
+    picture_url: Optional[str] = None
     # session_id comes from the URL path, not the body
 
 class DignitaryUpdate(BaseModel):
