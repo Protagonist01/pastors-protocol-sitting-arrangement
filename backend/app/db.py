@@ -1,13 +1,17 @@
 import os
+from pathlib import Path
 from supabase import create_client, Client
 from pydantic_settings import BaseSettings
+
+# Find the .env file (works for both local dev and Vercel serverless)
+_env_path = Path(__file__).resolve().parent.parent / ".env"
 
 class Settings(BaseSettings):
     supabase_url: str
     supabase_key: str
     
     class Config:
-        env_file = ".env"
+        env_file = str(_env_path) if _env_path.exists() else None
 
 try:
     settings = Settings()

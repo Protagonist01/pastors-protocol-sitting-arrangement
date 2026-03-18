@@ -116,7 +116,11 @@ export function Dashboard() {
               await createConference.mutateAsync(f);
               setShowNew(false);
             } catch (err) {
-              const msg = err.response?.data?.detail || err.message || 'Failed to create conference';
+              const detail = err?.response?.data?.detail;
+              const msg = typeof detail === 'string' ? detail
+                : Array.isArray(detail) ? detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+                : typeof err?.message === 'string' ? err.message
+                : 'Failed to create conference';
               throw new Error(msg);
             }
           }} onCancel={() => setShowNew(false)} />
