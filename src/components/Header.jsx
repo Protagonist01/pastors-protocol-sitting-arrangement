@@ -66,7 +66,7 @@ export function Header({ confName, sessionName }) {
           <button className="btn btn-ghost btn-icon" onClick={handleRefreshProfile} title="Refresh profile" style={{ fontSize: 18 }}>
             ↻
           </button>
-          <button className="btn btn-ghost btn-icon" onClick={handleLogout} title="Sign out">
+          <button className="header-logout-btn btn btn-ghost btn-icon" onClick={handleLogout} title="Sign out">
             <LogOut size={18} color="#ef4444" />
           </button>
           <button className="header-mobile-toggle" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
